@@ -20,7 +20,9 @@
       "Bash(.venv/Scripts/python -)",
       "Bash(git commit -q -m 'Phase 8: PWA — manifest, icons, service worker with offline shell, Web Push low-stock notifications *)",
       "Bash(.venv/Scripts/python -m pytest tests/ -q)",
-      "Bash(git commit -q -m 'Phase 9: pytest suite — stock math, rollback, gap-free numbering, void/return, role access *)"
+      "Bash(git commit -q -m 'Phase 9: pytest suite — stock math, rollback, gap-free numbering, void/return, role access *)",
+      "Bash(PYTHONPATH=. .venv/Scripts/python -c ' *)",
+      "Bash(git commit -q -m 'Phase 10: deploy prep — Procfile, DATABASE_URL normalization, secure cookies, backup script, README *)"
     ]
   }
 }
