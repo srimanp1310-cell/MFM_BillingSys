@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}New Stock Entry{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">New stock entry</h1>
+
+<form method="post" novalidate id="purchaseForm">
+  {{ form.hidden_tag() }}
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          {{ form.supplier_name.label(class="form-label") }}
+          {{ form.supplier_name(class="form-control") }}
+          {% for e in form.supplier_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4 mb-3">
+          {{ form.supplier_invoice_number.label(class="form-label") }}
+          {{ form.supplier_invoice_number(class="form-control") }}
+          {% for e in form.supplier_invoice_number.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4 mb-3">
+          {{ form.purchase_date.label(class="form-label") }}
+          {{ form.purchase_date(class="form-control", type="date") }}
+          {% for e in form.purchase_date.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+      <div class="mb-1">
+        {{ form.note.label(class="form-label") }}
+        {{ form.note(class="form-control", rows=2) }}
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+      <span>Items received</span>
+      <div>
+        <button type="button" class="btn btn-outline-success btn-sm" id="newProductBtn">
+          <i class="bi bi-plus-circle me-1"></i>New product
+        </button>
+        <button type="button" class="btn btn-success btn-sm" id="addLineBtn">
+          <i class="bi bi-plus-lg me-1"></i>Add line
+        </button>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0" id="linesTable">
+        <thead class="table-light">
+          <tr>
+            <th style="min-width: 260px;">Product</th>
+            <th style="width: 110px;">Qty</th>
+            <th style="width: 150px;">Unit cost ({{ currency }})</th>
+            <th style="width: 140px;" class="text-end">Line total</th>
+            <th style="width: 40px;"></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr class="table-light">
+            <th colspan="3" class="text-end">Total</th>
+            <th class="text-end" id="grandTotal">—</th>
+            <th></th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  {{ form.submit(class="btn btn-success") }}
+  <a href="{{ url_for('purchases.index') }}" class="btn btn-outline-secondary">Cancel</a>
+</form>
+
+{% include "_product_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+let PRODUCTS = {{ products | tojson }};
+const tbody = document.querySelector('#linesTable tbody');
+
+function productOptions(selected) {
+  return '<option value="">— pick product —</option>' + PRODUCTS.map(p =>
+    `<option value="${p.id}" data-cost="${p.cost}" ${String(p.id) === String(selected) ? 'selected' : ''}>${p.label}</option>`
+  ).join('');
+}
+
+function addLine(productId) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><select name="product_id[]" class="form-select form-select-sm" required>${productOptions(productId)}</select></td>
+    <td><input name="quantity[]" type="number" min="1" step="1" value="1" class="form-control form-control-sm" required></td>
+    <td><input name="unit_cost[]" type="number" min="0" step="0.01" class="form-control form-control-sm" placeholder="optional"></td>
+    <td class="text-end line-total">—</td>
+    <td><button type="button" class="btn btn-link text-danger p-0 remove-line"><i class="bi bi-trash"></i></button></td>`;
+  tbody.appendChild(tr);
+  const sel = tr.querySelector('select');
+  sel.addEventListener('change', () => {
+    const opt = sel.selectedOptions[0];
+    const cost = opt ? opt.dataset.cost : '';
+    if (cost) tr.querySelector('[name="unit_cost[]"]').value = cost;
+    recalc();
+  });
+  tr.querySelectorAll('input').forEach(i => i.addEventListener('input', recalc));
+  tr.querySelector('.remove-line').addEventListener('click', () => { tr.remove(); recalc(); });
+  recalc();
+  return tr;
+}
+
+function recalc() {
+  let total = 0, any = false;
+  tbody.querySelectorAll('tr').forEach(tr => {
+    const qty = parseFloat(tr.querySelector('[name="quantity[]"]').value) || 0;
+    const cost = parseFloat(tr.querySelector('[name="unit_cost[]"]').value);
+    const cell = tr.querySelector('.line-total');
+    if (!isNaN(cost)) {
+      const lt = qty * cost;
+      cell.textContent = lt.toFixed(2);
+      total += lt; any = true;
+    } else {
+      cell.textContent = '—';
+    }
+  });
+  document.getElementById('grandTotal').textContent = any ? total.toFixed(2) : '—';
+}
+
+document.getElementById('addLineBtn').addEventListener('click', () => addLine());
+document.getElementById('newProductBtn').addEventListener('click', () => {
+  ProductModal.open(p => {
+    PRODUCTS.push(p);
+    const tr = addLine(p.id);
+    tr.querySelector('select').dispatchEvent(new Event('change'));
+  });
+});
+
+document.getElementById('purchaseForm').addEventListener('submit', (e) => {
+  const rows = [...tbody.querySelectorAll('tr')].filter(tr => tr.querySelector('select').value);
+  if (rows.length === 0) {
+    e.preventDefault();
+    alert('Add at least one item line.');
+  }
+});
+
+addLine();
+</script>
+{% endblock %}

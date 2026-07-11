@@ -1,0 +1,155 @@
+{# Shared inline "new product" modal. Requires `categories` and `brands`
+   payloads in the template context. Call ProductModal.open(cb) — cb receives
+   the created product payload {id,label,cost,price,on_hand}. #}
+<div class="modal fade" id="productModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">New product</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger py-2 d-none" id="pmError"></div>
+        <div class="mb-2">
+          <label class="form-label">Product name *</label>
+          <input class="form-control" id="pmName">
+        </div>
+        <div class="row g-2">
+          <div class="col-6 mb-2">
+            <label class="form-label">Category *</label>
+            <select class="form-select" id="pmCategory"></select>
+          </div>
+          <div class="col-6 mb-2" id="pmNewCategoryBox" hidden>
+            <label class="form-label">New category name</label>
+            <input class="form-control" id="pmNewCategory" placeholder="e.g. Dining Set">
+            <div class="form-check mt-1">
+              <input type="checkbox" class="form-check-input" id="pmNewCategorySize">
+              <label class="form-check-label small" for="pmNewCategorySize">has sizes</label>
+            </div>
+          </div>
+          <div class="col-6 mb-2">
+            <label class="form-label">Brand</label>
+            <select class="form-select" id="pmBrand"></select>
+          </div>
+          <div class="col-6 mb-2" id="pmNewBrandBox" hidden>
+            <label class="form-label">New brand name</label>
+            <input class="form-control" id="pmNewBrand" placeholder="e.g. Wakefit">
+          </div>
+          <div class="col-6 mb-2" id="pmSizeBox" hidden>
+            <label class="form-label">Size</label>
+            <input class="form-control" id="pmSize" placeholder="e.g. 72x36x6">
+          </div>
+          <div class="col-6 mb-2">
+            <label class="form-label">Selling price *</label>
+            <input class="form-control" id="pmPrice" type="number" min="0" step="0.01">
+          </div>
+          <div class="col-6 mb-2">
+            <label class="form-label">Reorder level</label>
+            <input class="form-control" id="pmReorder" type="number" min="0" step="1" placeholder="low-stock alert">
+          </div>
+          <div class="col-6 mb-2">
+            <label class="form-label">Unit</label>
+            <select class="form-select" id="pmUnit"><option>piece</option><option>set</option></select>
+          </div>
+        </div>
+        <div class="form-text">Code/SKU is auto-generated.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="pmSave">Create product</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ProductModal = (() => {
+  const CATEGORIES = {{ categories | tojson }};
+  const BRANDS = {{ brands | tojson }};
+  const NEW_VAL = '-1';
+  const modalEl = document.getElementById('productModal');
+  const modal = new bootstrap.Modal(modalEl);
+  const el = id => document.getElementById(id);
+  let onCreate = null;
+
+  function fillSelects() {
+    el('pmCategory').innerHTML =
+      CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('') +
+      `<option value="${NEW_VAL}">➕ New category…</option>`;
+    refreshBrands();
+  }
+
+  function refreshBrands() {
+    const catVal = el('pmCategory').value;
+    const list = BRANDS.filter(b => String(b.category_id) === catVal);
+    el('pmBrand').innerHTML =
+      '<option value="">— no brand —</option>' +
+      list.map(b => `<option value="${b.id}">${b.name}</option>`).join('') +
+      `<option value="${NEW_VAL}">➕ New brand…</option>`;
+    refreshBoxes();
+  }
+
+  function refreshBoxes() {
+    const catVal = el('pmCategory').value;
+    el('pmNewCategoryBox').hidden = catVal !== NEW_VAL;
+    el('pmNewBrandBox').hidden = el('pmBrand').value !== NEW_VAL;
+    const cat = CATEGORIES.find(c => String(c.id) === catVal);
+    const showSize = catVal === NEW_VAL ? el('pmNewCategorySize').checked : (cat ? cat.track_size : false);
+    el('pmSizeBox').hidden = !showSize;
+  }
+
+  el('pmCategory') && fillSelects();
+  el('pmCategory').addEventListener('change', refreshBrands);
+  el('pmBrand').addEventListener('change', refreshBoxes);
+  el('pmNewCategorySize').addEventListener('change', refreshBoxes);
+
+  el('pmSave').addEventListener('click', async () => {
+    const catVal = el('pmCategory').value;
+    const brandVal = el('pmBrand').value;
+    const payload = {
+      name: el('pmName').value,
+      category_id: catVal !== NEW_VAL ? catVal : null,
+      new_category_name: catVal === NEW_VAL ? el('pmNewCategory').value : null,
+      new_category_track_size: catVal === NEW_VAL && el('pmNewCategorySize').checked,
+      brand_id: (brandVal && brandVal !== NEW_VAL) ? brandVal : null,
+      new_brand_name: brandVal === NEW_VAL ? el('pmNewBrand').value : null,
+      size: el('pmSize').value,
+      unit: el('pmUnit').value,
+      unit_price: el('pmPrice').value,
+      reorder_level: el('pmReorder').value,
+    };
+    const resp = await fetch('{{ url_for("purchases.api_create_product") }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      el('pmError').textContent = data.error || 'Could not create product.';
+      el('pmError').classList.remove('d-none');
+      return;
+    }
+    // if a new category/brand was created, reload page data lazily on next open
+    if (payload.new_category_name || payload.new_brand_name) {
+      // simplest correct behaviour: refresh CATEGORIES/BRANDS from the response product later;
+      // for now new entries appear after a page reload, the product itself is usable immediately.
+    }
+    modal.hide();
+    if (onCreate) onCreate(data.product);
+  });
+
+  return {
+    open(cb) {
+      onCreate = cb;
+      el('pmError').classList.add('d-none');
+      ['pmName', 'pmNewCategory', 'pmNewBrand', 'pmSize', 'pmPrice', 'pmReorder'].forEach(i => el(i).value = '');
+      el('pmNewCategorySize').checked = false;
+      fillSelects();
+      modal.show();
+    },
+  };
+})();
+</script>

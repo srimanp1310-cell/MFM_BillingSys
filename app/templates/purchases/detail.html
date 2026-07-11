@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Stock entry — {{ invoice.supplier_invoice_number }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Stock entry — {{ invoice.supplier_invoice_number }}</h1>
+  <a href="{{ url_for('purchases.index') }}" class="btn btn-outline-secondary btn-sm">Back</a>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <div class="row small">
+      <div class="col-md-3"><span class="text-muted">Supplier:</span> {{ invoice.supplier_name }}</div>
+      <div class="col-md-3"><span class="text-muted">Arrival date:</span> {{ invoice.purchase_date.strftime('%d-%m-%Y') }}</div>
+      <div class="col-md-3"><span class="text-muted">Recorded by:</span> {{ invoice.creator.username }}</div>
+      <div class="col-md-3"><span class="text-muted">Recorded at:</span> {{ invoice.created_at | localdt }}</div>
+    </div>
+    {% if invoice.note %}<div class="small mt-1"><span class="text-muted">Note:</span> {{ invoice.note }}</div>{% endif %}
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="table-light">
+        <tr><th>Code</th><th>Product</th><th class="text-end">Qty</th><th class="text-end">Unit cost</th><th class="text-end">Line total</th></tr>
+      </thead>
+      <tbody>
+        {% for li in invoice.line_items %}
+        <tr>
+          <td class="text-muted small">{{ li.product.code }}</td>
+          <td>{{ li.product.display_name }}</td>
+          <td class="text-end">{{ li.quantity }}</td>
+          <td class="text-end">{% if li.unit_cost is not none %}{{ currency }}{{ '%.2f' | format(li.unit_cost) }}{% else %}—{% endif %}</td>
+          <td class="text-end">{% if li.line_total is not none %}{{ currency }}{{ '%.2f' | format(li.line_total) }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% if invoice.total_amount %}
+      <tfoot>
+        <tr class="table-light"><th colspan="4" class="text-end">Total</th><th class="text-end">{{ currency }}{{ '%.2f' | format(invoice.total_amount) }}</th></tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}
