@@ -22,7 +22,7 @@
         <ul class="navbar-nav me-auto">
           <li class="nav-item"><a class="nav-link {% if request.blueprint == 'billing' %}active{% endif %}" href="{{ url_for('billing.index') }}"><i class="bi bi-receipt me-1"></i>Billing</a></li>
           <li class="nav-item"><a class="nav-link {% if request.blueprint == 'history' %}active{% endif %}" href="{{ url_for('history.index') }}"><i class="bi bi-clock-history me-1"></i>History</a></li>
-          <li class="nav-item"><a class="nav-link {% if request.blueprint == 'stock' %}active{% endif %}" href="{{ url_for('stock.index') }}"><i class="bi bi-box-seam me-1"></i>Stock</a></li>
+          <li class="nav-item"><a class="nav-link {% if request.blueprint == 'stock' %}active{% endif %}" href="{{ url_for('stock.index') }}"><i class="bi bi-box-seam me-1"></i>Stock{% if low_stock_count %} <span class="badge rounded-pill bg-warning text-dark">{{ low_stock_count }}</span>{% endif %}</a></li>
           <li class="nav-item"><a class="nav-link {% if request.blueprint == 'purchases' %}active{% endif %}" href="{{ url_for('purchases.index') }}"><i class="bi bi-truck me-1"></i>Stock Entry</a></li>
         </ul>
         <ul class="navbar-nav">
@@ -45,7 +45,7 @@
     <div class="container-fluid d-flex justify-content-around">
       <a class="bottom-tab {% if request.blueprint == 'billing' %}active{% endif %}" href="{{ url_for('billing.index') }}"><i class="bi bi-receipt"></i><span>Billing</span></a>
       <a class="bottom-tab {% if request.blueprint == 'history' %}active{% endif %}" href="{{ url_for('history.index') }}"><i class="bi bi-clock-history"></i><span>History</span></a>
-      <a class="bottom-tab {% if request.blueprint == 'stock' %}active{% endif %}" href="{{ url_for('stock.index') }}"><i class="bi bi-box-seam"></i><span>Stock</span></a>
+      <a class="bottom-tab {% if request.blueprint == 'stock' %}active{% endif %}" href="{{ url_for('stock.index') }}"><i class="bi bi-box-seam"></i><span>Stock{% if low_stock_count %} ({{ low_stock_count }}){% endif %}</span></a>
       <a class="bottom-tab {% if request.blueprint == 'purchases' %}active{% endif %}" href="{{ url_for('purchases.index') }}"><i class="bi bi-truck"></i><span>Entry</span></a>
     </div>
   </nav>

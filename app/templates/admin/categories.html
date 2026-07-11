@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Categories & Brands{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Categories &amp; Brands</h1>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-7">
+    {% for c in categories %}
+    <div class="card shadow-sm mb-3 {% if not c.is_active %}opacity-50{% endif %}">
+      <div class="card-header d-flex justify-content-between align-items-center py-2">
+        <div>
+          <strong>{{ c.name }}</strong>
+          {% if c.track_size %}<span class="badge bg-info text-dark ms-1">sizes</span>{% endif %}
+          {% if not c.is_active %}<span class="badge bg-secondary ms-1">inactive</span>{% endif %}
+        </div>
+        <form method="post" action="{{ url_for('admin.toggle_category', category_id=c.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-outline-{{ 'danger' if c.is_active else 'success' }} btn-sm py-0">
+            {{ 'deactivate' if c.is_active else 'activate' }}
+          </button>
+        </form>
+      </div>
+      <div class="card-body py-2">
+        {% set brands = c.brands.all() %}
+        {% if brands %}
+          {% for b in brands %}
+          <span class="badge rounded-pill text-bg-light border me-1 mb-1">
+            {{ b.name }}
+            <form method="post" action="{{ url_for('admin.toggle_brand', brand_id=b.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-link btn-sm p-0 ms-1 align-baseline text-decoration-none" title="{{ 'Deactivate' if b.is_active else 'Activate' }}">
+                {% if b.is_active %}<i class="bi bi-x-circle text-danger"></i>{% else %}<i class="bi bi-arrow-counterclockwise text-success"></i>{% endif %}
+              </button>
+            </form>
+          </span>
+          {% endfor %}
+        {% else %}
+        <span class="text-muted small">No brands yet.</span>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <p class="text-muted">No categories yet — add Chairs and Mattress to get started.</p>
+    {% endfor %}
+  </div>
+
+  <div class="col-12 col-lg-5">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header py-2">Add category</div>
+      <div class="card-body">
+        <form method="post">
+          {{ cat_form.hidden_tag() }}
+          <div class="mb-2">{{ cat_form.name(class="form-control", placeholder="e.g. Dining Set") }}</div>
+          <div class="form-check mb-2">
+            {{ cat_form.track_size(class="form-check-input") }}
+            {{ cat_form.track_size.label(class="form-check-label small") }}
+          </div>
+          {{ cat_form.submit(class="btn btn-success btn-sm") }}
+        </form>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header py-2">Add brand</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('admin.create_brand') }}">
+          {{ brand_form.hidden_tag() }}
+          <div class="mb-2">{{ brand_form.name(class="form-control", placeholder="e.g. Sleepwell") }}</div>
+          <div class="mb-2">{{ brand_form.category_id(class="form-select") }}</div>
+          {{ brand_form.submit(class="btn btn-success btn-sm") }}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

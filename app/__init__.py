@@ -54,15 +54,27 @@ def create_app(config_class=Config):
 
     @app.context_processor
     def inject_globals():
-        from app.models import AppSetting
+        from flask_login import current_user
 
-        def currency():
+        from app.models import AppSetting, Product
+
+        try:
+            symbol = AppSetting.get("currency_symbol") or app.config["CURRENCY_SYMBOL"]
+        except Exception:  # settings table may not exist mid-migration
+            symbol = app.config["CURRENCY_SYMBOL"]
+
+        low_stock_count = 0
+        if current_user.is_authenticated:
             try:
-                return AppSetting.get("currency_symbol") or app.config["CURRENCY_SYMBOL"]
-            except Exception:  # settings table may not exist mid-migration
-                return app.config["CURRENCY_SYMBOL"]
+                low_stock_count = Product.query.filter(
+                    Product.is_active.is_(True),
+                    Product.reorder_level.isnot(None),
+                    Product.quantity_on_hand <= Product.reorder_level,
+                ).count()
+            except Exception:
+                pass
 
-        return {"currency": currency()}
+        return {"currency": symbol, "low_stock_count": low_stock_count}
 
     register_cli(app)
     return app

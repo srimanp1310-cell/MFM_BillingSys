@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Admin panel</h1>
+<div class="row g-3">
+  <div class="col-6 col-md-4">
+    <a href="{{ url_for('admin.products') }}" class="card text-decoration-none shadow-sm h-100">
+      <div class="card-body text-center"><i class="bi bi-box fs-2 d-block mb-1"></i>Products</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-4">
+    <a href="{{ url_for('admin.categories') }}" class="card text-decoration-none shadow-sm h-100">
+      <div class="card-body text-center"><i class="bi bi-tags fs-2 d-block mb-1"></i>Categories &amp; Brands</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-4">
+    <a href="{{ url_for('auth.users') }}" class="card text-decoration-none shadow-sm h-100">
+      <div class="card-body text-center"><i class="bi bi-people fs-2 d-block mb-1"></i>Users</div>
+    </a>
+  </div>
+</div>
+{% endblock %}

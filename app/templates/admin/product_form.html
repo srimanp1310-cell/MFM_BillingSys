@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit product' if product else 'New product' }}{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">{{ 'Edit product — ' + product.name if product else 'New product' }}</h1>
+
+<form method="post" class="card shadow-sm" novalidate>
+  <div class="card-body">
+    {{ form.hidden_tag() }}
+    {% macro field(f, col='col-md-6') %}
+    <div class="{{ col }} mb-3">
+      {{ f.label(class="form-label") }}
+      {{ f(class="form-select" if f.type == "SelectField" else "form-control") }}
+      {% if f.description %}<div class="form-text">{{ f.description }}</div>{% endif %}
+      {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    {% endmacro %}
+
+    <div class="row">
+      {{ field(form.name) }}
+      {{ field(form.code, 'col-md-3') }}
+      {{ field(form.unit, 'col-md-3') }}
+    </div>
+    <div class="row">
+      {{ field(form.category_id, 'col-md-4') }}
+      <div class="col-md-5 mb-3" id="newCategoryBox" hidden>
+        {{ form.new_category_name.label(class="form-label") }}
+        {{ form.new_category_name(class="form-control", placeholder="e.g. Dining Set") }}
+        <div class="form-check mt-1">
+          {{ form.new_category_track_size(class="form-check-input") }}
+          {{ form.new_category_track_size.label(class="form-check-label small") }}
+        </div>
+      </div>
+      {{ field(form.brand_id, 'col-md-4') }}
+      <div class="col-md-4 mb-3" id="newBrandBox" hidden>
+        {{ form.new_brand_name.label(class="form-label") }}
+        {{ form.new_brand_name(class="form-control", placeholder="e.g. Nilkamal") }}
+      </div>
+      <div class="col-md-4 mb-3" id="sizeBox" hidden>
+        {{ form.size.label(class="form-label") }}
+        {{ form.size(class="form-control", placeholder="e.g. 72x36x6") }}
+      </div>
+    </div>
+    <div class="row">
+      {{ field(form.unit_price, 'col-md-3') }}
+      {{ field(form.cost_price, 'col-md-3') }}
+      {{ field(form.reorder_level, 'col-md-6') }}
+    </div>
+    {{ field(form.description, 'col-12') }}
+  </div>
+  <div class="card-footer d-flex gap-2">
+    {{ form.submit(class="btn btn-success") }}
+    <a href="{{ url_for('admin.products') }}" class="btn btn-outline-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const categoryMeta = {{ form.category_meta | tojson }};
+  const brandMeta = {{ form.brand_meta | tojson }};
+  const NEW_SENTINEL = -1;
+
+  const catSel = document.getElementById('category_id');
+  const brandSel = document.getElementById('brand_id');
+  const newCatBox = document.getElementById('newCategoryBox');
+  const newBrandBox = document.getElementById('newBrandBox');
+  const sizeBox = document.getElementById('sizeBox');
+  const trackSizeChk = document.getElementById('new_category_track_size');
+
+  function refresh() {
+    const catVal = parseInt(catSel.value);
+    newCatBox.hidden = catVal !== NEW_SENTINEL;
+
+    // hide brands that belong to other categories
+    for (const opt of brandSel.options) {
+      const id = parseInt(opt.value);
+      if (id > 0) {
+        const meta = brandMeta[id];
+        opt.hidden = catVal > 0 && meta && meta.category_id !== catVal;
+        if (opt.hidden && brandSel.value === opt.value) brandSel.value = '0';
+      }
+    }
+    newBrandBox.hidden = parseInt(brandSel.value) !== NEW_SENTINEL;
+
+    // size only for size-tracking categories (or a new category marked as such)
+    let showSize = false;
+    if (catVal === NEW_SENTINEL) showSize = trackSizeChk.checked;
+    else if (categoryMeta[catVal]) showSize = categoryMeta[catVal].track_size;
+    sizeBox.hidden = !showSize;
+  }
+
+  catSel.addEventListener('change', refresh);
+  brandSel.addEventListener('change', refresh);
+  trackSizeChk.addEventListener('change', refresh);
+  refresh();
+</script>
+{% endblock %}
