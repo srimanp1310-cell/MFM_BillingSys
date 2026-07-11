@@ -44,7 +44,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(16), nullable=False, default=ROLE_STAFF)
     is_active_flag = db.Column("is_active", db.Boolean, nullable=False, default=True)
     # self-registered accounts wait for an admin to approve them
-    is_approved = db.Column(db.Boolean, nullable=False, default=True, server_default=db.text("1"))
+    is_approved = db.Column(db.Boolean, nullable=False, default=True, server_default=db.text("true"))
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     def set_password(self, password):

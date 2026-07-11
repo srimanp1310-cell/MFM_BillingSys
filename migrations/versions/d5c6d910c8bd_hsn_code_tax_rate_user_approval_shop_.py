@@ -28,7 +28,7 @@ def upgrade():
         batch_op.add_column(sa.Column('hsn_code', sa.String(length=16), nullable=True))
 
     with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('is_approved', sa.Boolean(), server_default=sa.text('1'), nullable=False))
+        batch_op.add_column(sa.Column('is_approved', sa.Boolean(), server_default=sa.text('true'), nullable=False))
 
     # ### end Alembic commands ###
 
