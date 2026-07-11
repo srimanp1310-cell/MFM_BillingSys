@@ -20,6 +20,12 @@
   </h1>
   <div class="d-flex gap-2">
     {% if current_user.is_admin and bill.status == 'completed' %}
+    {% set returnable = bill.line_items | sum(attribute='quantity') - bill.line_items | sum(attribute='returned_qty') %}
+    {% if returnable > 0 %}
+    <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#returnModal">
+      <i class="bi bi-arrow-return-left me-1"></i>Return items
+    </button>
+    {% endif %}
     <form method="post" action="{{ url_for('history.void', bill_id=bill.id) }}"
           onsubmit="return confirm('Void bill {{ bill.bill_number }}? Stock will be restored. This cannot be undone.');">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -104,4 +110,38 @@
   <div class="text-center text-muted small border-top mt-4 pt-2">{{ shop.invoice_footer }}</div>
   {% endif %}
 </div>
+
+{% if current_user.is_admin and bill.status == 'completed' %}
+<div class="modal fade" id="returnModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="post" action="{{ url_for('history.return_items', bill_id=bill.id) }}" class="modal-content">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-header"><h5 class="modal-title">Return items — {{ bill.bill_number }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Item</th><th class="text-end">Sold</th><th class="text-end">Returned</th><th style="width:110px;">Return now</th></tr></thead>
+          <tbody>
+            {% for li in bill.line_items %}
+            <tr>
+              <td class="small">{{ li.product_name }}</td>
+              <td class="text-end">{{ li.quantity }}</td>
+              <td class="text-end">{{ li.returned_qty }}</td>
+              <td><input type="number" name="return_qty_{{ li.id }}" class="form-control form-control-sm"
+                         min="0" max="{{ li.quantity - li.returned_qty }}" value="0"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <input name="note" class="form-control form-control-sm" placeholder="Reason (optional)">
+        <div class="form-text">Returned items go back into stock. Money handling stays offline in v1.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-warning">Record return</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

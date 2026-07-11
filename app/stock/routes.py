@@ -1,9 +1,11 @@
-from flask import render_template, request
-from flask_login import login_required
+from flask import flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import Category, Product
+from app.models import Category, Product, StockMovement
+from app.services import stock_service
 from app.stock import bp
+from app.utils import admin_required
 
 
 @bp.route("/")
@@ -40,3 +42,35 @@ def index():
         include_inactive=include_inactive,
         low_count=low_count,
     )
+
+
+@bp.route("/<int:product_id>/adjust", methods=["POST"])
+@admin_required
+def adjust(product_id):
+    product = db.get_or_404(Product, product_id)
+    delta = request.form.get("delta", type=int)
+    note = request.form.get("note", "")
+    try:
+        if delta is None:
+            raise ValueError("Enter a quantity change (e.g. -2 or 5).")
+        stock_service.adjust_stock(product, delta, note, current_user.id)
+        flash(
+            f"Stock adjusted: {product.name} {'+' if delta > 0 else ''}{delta} → now {product.quantity_on_hand}.",
+            "success",
+        )
+    except ValueError as e:
+        flash(str(e), "danger")
+    return redirect(url_for("stock.index"))
+
+
+@bp.route("/<int:product_id>/movements")
+@login_required
+def movements(product_id):
+    product = db.get_or_404(Product, product_id)
+    items = (
+        StockMovement.query.filter_by(product_id=product_id)
+        .order_by(StockMovement.created_at.desc(), StockMovement.id.desc())
+        .limit(300)
+        .all()
+    )
+    return render_template("stock/movements.html", product=product, movements=items)

@@ -6,7 +6,7 @@ from flask_login import current_user, login_required
 from app.extensions import db
 from app.history import bp
 from app.models import Bill, BillLineItem, Product
-from app.services import billing_service
+from app.services import billing_service, stock_service
 from app.utils import admin_required, local_tz
 
 
@@ -65,6 +65,26 @@ def index():
             "to": date_to,
         },
     )
+
+
+@bp.route("/<int:bill_id>/return", methods=["POST"])
+@admin_required
+def return_items(bill_id):
+    bill = db.get_or_404(Bill, bill_id)
+    quantities = {}
+    for li in bill.line_items:
+        qty = request.form.get(f"return_qty_{li.id}", type=int) or 0
+        if qty:
+            quantities[li.id] = qty
+    try:
+        stock_service.record_return(
+            bill, quantities, (request.form.get("note") or "").strip() or None, current_user.id
+        )
+        total_qty = sum(quantities.values())
+        flash(f"Return recorded — {total_qty} item{'s' if total_qty != 1 else ''} back in stock.", "success")
+    except ValueError as e:
+        flash(str(e), "danger")
+    return redirect(url_for("billing.view", bill_id=bill.id))
 
 
 @bp.route("/<int:bill_id>/void", methods=["POST"])

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Movements — {{ product.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Stock ledger — {{ product.display_name }}</h1>
+  <a href="{{ url_for('stock.index') }}" class="btn btn-outline-secondary btn-sm">Back to stock</a>
+</div>
+
+<div class="alert alert-light border py-2 small">
+  Current on hand: <strong>{{ product.quantity_on_hand }}</strong>
+  {% if product.reorder_level is not none %} · reorder level {{ product.reorder_level }}{% endif %}
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr><th>When</th><th>Type</th><th class="text-end">Change</th><th>Reference</th><th>Note</th><th>By</th></tr>
+      </thead>
+      <tbody>
+        {% for m in movements %}
+        <tr>
+          <td class="text-nowrap small">{{ m.created_at | localdt }}</td>
+          <td>
+            {% set colors = {'SALE': 'primary', 'PURCHASE': 'success', 'RETURN': 'warning text-dark',
+                             'ADJUSTMENT': 'secondary', 'VOID_REVERSAL': 'danger'} %}
+            <span class="badge bg-{{ colors.get(m.movement_type, 'light') }}">{{ m.movement_type }}</span>
+          </td>
+          <td class="text-end fw-semibold {{ 'text-success' if m.change_qty > 0 else 'text-danger' }}">
+            {{ '+' if m.change_qty > 0 }}{{ m.change_qty }}
+          </td>
+          <td class="small">
+            {% if m.reference_type == 'bill' %}
+              <a href="{{ url_for('billing.view', bill_id=m.reference_id) }}">bill #{{ m.reference_id }}</a>
+            {% elif m.reference_type == 'purchase' %}
+              <a href="{{ url_for('purchases.detail', invoice_id=m.reference_id) }}">purchase #{{ m.reference_id }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td class="small text-muted">{{ m.note or '—' }}</td>
+          <td class="small text-muted">{{ m.creator.username }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No movements yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

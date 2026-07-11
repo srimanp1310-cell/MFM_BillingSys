@@ -13,6 +13,16 @@ from wtforms.validators import DataRequired, Length, NumberRange, Optional
 NEW_SENTINEL = -1  # select value meaning "create a new category/brand"
 
 
+class SettingsForm(FlaskForm):
+    shop_name = StringField("Shop name", validators=[DataRequired(), Length(max=128)])
+    shop_address = TextAreaField("Address", validators=[Optional()])
+    shop_phone = StringField("Phone", validators=[Optional(), Length(max=32)])
+    shop_gstin = StringField("GSTIN", validators=[Optional(), Length(max=32)])
+    currency_symbol = StringField("Currency symbol", validators=[DataRequired(), Length(max=8)])
+    invoice_footer = StringField("Invoice footer line", validators=[Optional(), Length(max=255)])
+    submit = SubmitField("Save settings")
+
+
 class CategoryForm(FlaskForm):
     name = StringField("Category name", validators=[DataRequired(), Length(max=64)])
     track_size = BooleanField("Products in this category have a size (e.g. mattresses)")

@@ -18,5 +18,22 @@
       <div class="card-body text-center"><i class="bi bi-people fs-2 d-block mb-1"></i>Users</div>
     </a>
   </div>
+  <div class="col-6 col-md-4">
+    <a href="{{ url_for('admin.settings') }}" class="card text-decoration-none shadow-sm h-100">
+      <div class="card-body text-center"><i class="bi bi-sliders fs-2 d-block mb-1"></i>Shop settings</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body text-center">
+        <i class="bi bi-arrow-repeat fs-2 d-block mb-1"></i>
+        <form method="post" action="{{ url_for('admin.recompute') }}"
+              onsubmit="return confirm('Recompute all stock quantities from the movement ledger?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-link text-decoration-none p-0">Recompute stock<br><span class="small text-muted">from ledger (safety net)</span></button>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

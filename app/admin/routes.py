@@ -1,10 +1,10 @@
 from flask import flash, redirect, render_template, request, url_for
 
 from app.admin import bp
-from app.admin.forms import NEW_SENTINEL, BrandForm, CategoryForm, ProductForm
+from app.admin.forms import NEW_SENTINEL, BrandForm, CategoryForm, ProductForm, SettingsForm
 from app.extensions import db
-from app.models import Brand, Category, Product
-from app.services import product_service
+from app.models import AppSetting, Brand, Category, Product
+from app.services import product_service, stock_service
 from app.utils import admin_required
 
 
@@ -12,6 +12,33 @@ from app.utils import admin_required
 @admin_required
 def index():
     return render_template("admin/index.html")
+
+
+@bp.route("/settings", methods=["GET", "POST"])
+@admin_required
+def settings():
+    form = SettingsForm(data=AppSetting.all_settings())
+    if form.validate_on_submit():
+        for key in AppSetting.DEFAULTS:
+            AppSetting.set(key, (getattr(form, key).data or "").strip())
+        db.session.commit()
+        flash("Settings saved.", "success")
+        return redirect(url_for("admin.settings"))
+    return render_template("admin/settings.html", form=form)
+
+
+@bp.route("/recompute", methods=["POST"])
+@admin_required
+def recompute():
+    drifted = stock_service.recompute_from_ledger()
+    if not drifted:
+        flash("Stock check passed — all quantities match the ledger.", "success")
+    else:
+        details = "; ".join(
+            f"{d['product'].name}: {d['cached']} → {d['ledger']}" for d in drifted
+        )
+        flash(f"Fixed {len(drifted)} drifted product(s): {details}", "warning")
+    return redirect(url_for("admin.index"))
 
 
 # --- categories & brands ---

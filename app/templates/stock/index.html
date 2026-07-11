@@ -63,7 +63,9 @@
           <td>{{ p.category.name }}</td>
           <td>{{ p.brand.name if p.brand else '—' }}</td>
           <td>{{ p.size or '—' }}</td>
-          <td class="text-end fw-semibold {% if p.quantity_on_hand < 0 %}text-danger{% endif %}">{{ p.quantity_on_hand }}</td>
+          <td class="text-end fw-semibold {% if p.quantity_on_hand < 0 %}text-danger{% endif %}">
+            <a href="{{ url_for('stock.movements', product_id=p.id) }}" class="text-decoration-none" title="View ledger">{{ p.quantity_on_hand }}</a>
+          </td>
           <td class="text-end">{{ currency }}{{ '%.2f' | format(p.unit_price) }}</td>
           <td>
             {% if not p.is_active %}<span class="badge bg-secondary">inactive</span>
@@ -71,7 +73,11 @@
             {% else %}<span class="badge bg-success">ok</span>{% endif %}
           </td>
           {% if current_user.is_admin %}
-          <td class="text-end"><a href="{{ url_for('admin.edit_product', product_id=p.id) }}" class="btn btn-outline-secondary btn-sm py-0">edit</a></td>
+          <td class="text-end text-nowrap">
+            <a href="{{ url_for('admin.edit_product', product_id=p.id) }}" class="btn btn-outline-secondary btn-sm py-0">edit</a>
+            <button type="button" class="btn btn-outline-dark btn-sm py-0 adjust-btn"
+                    data-id="{{ p.id }}" data-name="{{ p.display_name }}" data-onhand="{{ p.quantity_on_hand }}">adjust</button>
+          </td>
           {% endif %}
         </tr>
         {% else %}
@@ -81,4 +87,47 @@
     </table>
   </div>
 </div>
+
+{% if current_user.is_admin %}
+<div class="modal fade" id="adjustModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="post" id="adjustForm" class="modal-content">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="modal-header"><h5 class="modal-title">Adjust stock — <span id="adjName"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p class="small text-muted mb-2">On hand: <strong id="adjOnHand"></strong>. Use a negative number for damage/miscount removals, positive to add.</p>
+        <div class="mb-2">
+          <label class="form-label">Change (+/−)</label>
+          <input name="delta" type="number" step="1" class="form-control" required placeholder="e.g. -2">
+        </div>
+        <div class="mb-1">
+          <label class="form-label">Reason (required)</label>
+          <input name="note" class="form-control" required minlength="3" placeholder="e.g. damaged in display">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-dark">Apply adjustment</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if current_user.is_admin %}
+<script>
+const adjustModal = new bootstrap.Modal(document.getElementById('adjustModal'));
+document.querySelectorAll('.adjust-btn').forEach(btn => btn.addEventListener('click', () => {
+  document.getElementById('adjName').textContent = btn.dataset.name;
+  document.getElementById('adjOnHand').textContent = btn.dataset.onhand;
+  const form = document.getElementById('adjustForm');
+  form.action = "{{ url_for('stock.adjust', product_id=0) }}".replace('/0/', '/' + btn.dataset.id + '/');
+  form.reset();
+  adjustModal.show();
+}));
+</script>
+{% endif %}
 {% endblock %}
