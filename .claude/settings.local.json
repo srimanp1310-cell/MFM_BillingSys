@@ -22,7 +22,8 @@
       "Bash(.venv/Scripts/python -m pytest tests/ -q)",
       "Bash(git commit -q -m 'Phase 9: pytest suite — stock math, rollback, gap-free numbering, void/return, role access *)",
       "Bash(PYTHONPATH=. .venv/Scripts/python -c ' *)",
-      "Bash(git commit -q -m 'Phase 10: deploy prep — Procfile, DATABASE_URL normalization, secure cookies, backup script, README *)"
+      "Bash(git commit -q -m 'Phase 10: deploy prep — Procfile, DATABASE_URL normalization, secure cookies, backup script, README *)",
+      "Bash(git commit -q -m 'Fix: tax row visible when Apply tax off \\(hidden attr lost to d-flex\\); add launch config *)"
     ]
   }
 }
