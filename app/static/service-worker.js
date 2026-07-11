@@ -2,7 +2,7 @@
    Billing/stock actions always need the server; offline mode only keeps the
    shell loading gracefully. */
 
-const CACHE = 'mfm-shell-v1';
+const CACHE = 'mfm-shell-v2';
 const SHELL = [
   '/offline',
   '/static/css/app.css',
@@ -32,13 +32,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (new URL(req.url).pathname.startsWith('/static/')) {
-    // static assets: cache first, then network (and cache it)
+    // static assets: stale-while-revalidate — serve cached copy instantly,
+    // refresh it in the background so replaced files (e.g. logo) update
     event.respondWith(
-      caches.match(req).then((hit) => hit || fetch(req).then((resp) => {
-        const copy = resp.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy));
-        return resp;
-      }))
+      caches.match(req).then((hit) => {
+        const refresh = fetch(req).then((resp) => {
+          if (resp.ok) {
+            const copy = resp.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+          }
+          return resp;
+        }).catch(() => hit);
+        return hit || refresh;
+      })
     );
   }
 });

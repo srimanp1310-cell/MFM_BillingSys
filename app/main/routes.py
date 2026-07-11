@@ -1,6 +1,5 @@
 from flask import current_app, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
-
 from app.extensions import db
 from app.main import bp
 from app.models import PushSubscription
