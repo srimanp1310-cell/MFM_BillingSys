@@ -30,7 +30,7 @@ utility can rebuild the cache from it at any time.
 ```bash
 python -m venv .venv
 .venv/Scripts/activate            # Windows; use bin/activate on Linux/macOS
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt
 copy .env.example .env            # then edit SECRET_KEY etc.
 flask db upgrade
 flask seed-admin                  # creates the admin login
@@ -40,25 +40,12 @@ flask run
 
 Dev database is SQLite at `instance/app.db`. Run tests with `pytest`.
 
-## Deployment (Render or Railway)
+## Deployment
 
-Both give HTTPS automatically (required for the PWA) and managed Postgres.
-
-1. Create a **PostgreSQL** instance and copy its connection string.
-2. Create a **web service** from this repo.
-   - Build: `pip install -r requirements.txt`
-   - Start: `gunicorn wsgi:app --workers 2` (Railway reads the `Procfile`)
-3. Environment variables:
-   - `SECRET_KEY` — long random string
-   - `DATABASE_URL` — the Postgres URL (postgres:// is auto-normalized)
-   - `SECURE_COOKIES=1`
-   - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CLAIM_EMAIL` — from
-     `flask gen-vapid` (for push notifications)
-4. Run once: `flask db upgrade && flask seed-admin` (Render "release" runs
-   `flask db upgrade` automatically via the Procfile release phase).
-5. **Backups (day one!):** schedule `scripts/backup.sh` daily via a cron
-   job/scheduled service and copy the dump off-server. Billing data is
-   irreplaceable.
+Target host is **Railway** — see [DEPLOYMENT.md](DEPLOYMENT.md) for the full
+step-by-step guide (GitHub push, Postgres, env vars, admin seeding, PWA
+install on staff phones, and daily backups). Migrations run automatically on
+every deploy via the `Procfile`.
 
 ## Architecture notes
 

@@ -30,7 +30,17 @@
       "Bash(rm -f instance/app.db)",
       "Bash(.venv/Scripts/python -m flask db upgrade)",
       "Bash(.venv/Scripts/python -m flask seed-admin --password admin123)",
-      "Bash(git commit -q -m 'Reset database to clean state for production; shop details as AppSetting defaults *)"
+      "Bash(git commit -q -m 'Reset database to clean state for production; shop details as AppSetting defaults *)",
+      "Bash(grep -n \"^\\\\.env$\" .gitignore)",
+      "Bash(SECURE_COOKIES=1 SECRET_KEY='' .venv/Scripts/python -c ' *)",
+      "Bash(git commit -q -m 'Document env vars; harden config: SameSite cookies, TIMEZONE, prod SECRET_KEY guard *)",
+      "Bash(.venv/Scripts/python -m pip install -q --dry-run -r requirements.txt)",
+      "Bash(git commit -q -m 'Railway-ready Procfile \\(migrations in start command\\); slim production requirements *)",
+      "Bash(.venv/Scripts/python -m compileall -q app tests wsgi.py)",
+      "Bash(.venv/Scripts/python -c \"from app import create_app; app = create_app\\(\\); print\\('app imports cleanly,', len\\(list\\(app.url_map.iter_rules\\(\\)\\)\\), 'routes'\\)\")",
+      "Bash(git commit -q -m 'Deployment guide for Railway; .gitignore covers logs and OS artifacts *)",
+      "Bash(.venv/Scripts/python -c \"from app import create_app; create_app\\(\\); print\\('app imports cleanly'\\)\")",
+      "Bash(git commit -q -m 'Pre-deployment audit complete: ready for Railway *)"
     ]
   }
 }
