@@ -225,12 +225,14 @@ class AppSetting(db.Model):
     key = db.Column(db.String(64), primary_key=True)
     value = db.Column(db.Text, nullable=False, default="")
 
+    # Real shop details as defaults so a fresh production database prints the
+    # correct invoice header immediately; all editable in Admin > Settings.
     DEFAULTS = {
-        "shop_name": "My Furniture Mart",
-        "shop_address": "",
-        "shop_phone": "",
-        "shop_gstin": "",
-        "shop_prop": "",  # proprietor name, shown as "Prop : ..." on the bill
+        "shop_name": "Murali Furniture Mall",
+        "shop_address": "Door no : 7-9-26, Mallimanugula vaari street, Anakapalle, 531001 (AP)",
+        "shop_phone": "9849979215",
+        "shop_gstin": "37APEPPK9406D1ZB",
+        "shop_prop": "K S Srinivasa Rao",  # shown as "Prop : ..." on the bill
         "currency_symbol": "₹",
         "invoice_footer": "Thank you for your business!",
     }

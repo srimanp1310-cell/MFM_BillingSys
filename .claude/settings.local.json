@@ -25,7 +25,12 @@
       "Bash(git commit -q -m 'Phase 10: deploy prep — Procfile, DATABASE_URL normalization, secure cookies, backup script, README *)",
       "Bash(git commit -q -m 'Fix: tax row visible when Apply tax off \\(hidden attr lost to d-flex\\); add launch config *)",
       "Bash(.venv/Scripts/python -m pip install -q pdfplumber)",
-      "Bash(git commit -q -m 'Invoice restyled to match Murali Furniture Mall bill; staff self-registration with admin approval *)"
+      "Bash(git commit -q -m 'Invoice restyled to match Murali Furniture Mall bill; staff self-registration with admin approval *)",
+      "Bash(git commit -q -m 'New MFM seal logo \\(trimmed\\); service worker uses stale-while-revalidate for static assets *)",
+      "Bash(rm -f instance/app.db)",
+      "Bash(.venv/Scripts/python -m flask db upgrade)",
+      "Bash(.venv/Scripts/python -m flask seed-admin --password admin123)",
+      "Bash(git commit -q -m 'Reset database to clean state for production; shop details as AppSetting defaults *)"
     ]
   }
 }
