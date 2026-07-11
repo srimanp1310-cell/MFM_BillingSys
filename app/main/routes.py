@@ -1,4 +1,5 @@
-from flask import render_template
+from flask import redirect, url_for
+from flask_login import login_required
 
 from app.main import bp
 
@@ -9,5 +10,6 @@ def health():
 
 
 @bp.route("/")
+@login_required
 def index():
-    return render_template("index.html")
+    return redirect(url_for("billing.index"))

@@ -1,5 +1,6 @@
 import os
 
+import click
 from flask import Flask
 
 from app.config import Config
@@ -17,16 +18,72 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     csrf.init_app(app)
 
-    @login_manager.user_loader
-    def load_user(user_id):  # replaced by the real loader in the auth phase
-        return None
+    from app.models import User
 
+    @login_manager.user_loader
+    def load_user(user_id):
+        return db.session.get(User, int(user_id))
+
+    from app.admin import bp as admin_bp
+    from app.auth import bp as auth_bp
+    from app.billing import bp as billing_bp
+    from app.history import bp as history_bp
     from app.main import bp as main_bp
+    from app.purchases import bp as purchases_bp
+    from app.stock import bp as stock_bp
 
     app.register_blueprint(main_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(billing_bp)
+    app.register_blueprint(history_bp)
+    app.register_blueprint(stock_bp)
+    app.register_blueprint(purchases_bp)
+    app.register_blueprint(admin_bp)
+
+    from app.utils import to_local
+
+    @app.template_filter("localdt")
+    def localdt(dt, fmt="%d-%m-%Y %I:%M %p"):
+        local = to_local(dt)
+        return local.strftime(fmt) if local else ""
+
+    @app.template_filter("localdate")
+    def localdate(dt, fmt="%d-%m-%Y"):
+        local = to_local(dt)
+        return local.strftime(fmt) if local else ""
 
     @app.context_processor
     def inject_globals():
-        return {"currency": app.config["CURRENCY_SYMBOL"]}
+        from app.models import AppSetting
 
+        def currency():
+            try:
+                return AppSetting.get("currency_symbol") or app.config["CURRENCY_SYMBOL"]
+            except Exception:  # settings table may not exist mid-migration
+                return app.config["CURRENCY_SYMBOL"]
+
+        return {"currency": currency()}
+
+    register_cli(app)
     return app
+
+
+def register_cli(app):
+    @app.cli.command("seed-admin")
+    @click.option("--username", default="admin", show_default=True)
+    @click.option("--password", default=None, help="If omitted, you will be prompted.")
+    def seed_admin(username, password):
+        """Create the initial admin user (no-op if username exists)."""
+        from app.models import ROLE_ADMIN, User
+
+        username = username.strip().lower()
+        if User.query.filter_by(username=username).first():
+            click.echo(f"User '{username}' already exists — nothing to do.")
+            return
+        if not password:
+            password = click.prompt("Password for admin", hide_input=True, confirmation_prompt=True)
+        user = User(username=username, role=ROLE_ADMIN)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        click.echo(f"Admin user '{username}' created.")

@@ -9,7 +9,9 @@
       "Bash(.venv/Scripts/python -m flask db init)",
       "Bash(.venv/Scripts/python -c ' *)",
       "Bash(git add *)",
-      "Bash(git commit -q -m 'Phase 1: scaffold Flask app factory, config, extensions, base template, migrations *)"
+      "Bash(git commit -q -m 'Phase 1: scaffold Flask app factory, config, extensions, base template, migrations *)",
+      "Bash(python -)",
+      "Bash(git commit -q -m 'Phase 2: full data model, auth \\(login/logout\\), user management, seed-admin CLI *)"
     ]
   }
 }

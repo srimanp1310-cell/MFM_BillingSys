@@ -17,3 +17,24 @@ main {
     padding-bottom: 1rem;
   }
 }
+
+/* Mobile bottom tab bar */
+.bottom-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.7rem;
+  color: #6c757d;
+  text-decoration: none;
+  padding: 0.15rem 0.6rem;
+}
+
+.bottom-tab i {
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.bottom-tab.active {
+  color: var(--brand);
+  font-weight: 600;
+}
