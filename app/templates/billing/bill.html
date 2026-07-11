@@ -19,6 +19,13 @@
     {% if bill.status == 'voided' %}<span class="badge bg-danger align-middle">VOIDED</span>{% endif %}
   </h1>
   <div class="d-flex gap-2">
+    {% if current_user.is_admin and bill.status == 'completed' %}
+    <form method="post" action="{{ url_for('history.void', bill_id=bill.id) }}"
+          onsubmit="return confirm('Void bill {{ bill.bill_number }}? Stock will be restored. This cannot be undone.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-outline-danger btn-sm"><i class="bi bi-x-octagon me-1"></i>Void</button>
+    </form>
+    {% endif %}
     <button onclick="window.print()" class="btn btn-outline-primary btn-sm"><i class="bi bi-printer me-1"></i>Print</button>
     <a href="{{ url_for('billing.index') }}" class="btn btn-success btn-sm"><i class="bi bi-plus-lg me-1"></i>New bill</a>
   </div>

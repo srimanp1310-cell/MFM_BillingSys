@@ -13,7 +13,8 @@
       "Bash(python -)",
       "Bash(git commit -q -m 'Phase 2: full data model, auth \\(login/logout\\), user management, seed-admin CLI *)",
       "Bash(git commit -q -m 'Phase 3: categories/brands/products CRUD, stock status page, low-stock alerts, stock+billing services *)",
-      "Bash(git commit -q -m 'Phase 5: billing — line items, discount/optional tax, stock warnings, numbering, A4 print view *)"
+      "Bash(git commit -q -m 'Phase 5: billing — line items, discount/optional tax, stock warnings, numbering, A4 print view *)",
+      "Bash(git commit -q -m 'Phase 6: billing history — filters, pagination, bill detail reprint, admin void *)"
     ]
   }
 }
