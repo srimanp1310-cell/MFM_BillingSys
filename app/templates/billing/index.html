@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}Billing{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">New bill</h1>
+
+<form method="post" action="{{ url_for('billing.save') }}" id="billForm" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body py-3">
+      <div class="row g-2">
+        <div class="col-6 col-md-3">
+          <label class="form-label">Bill number</label>
+          <input name="bill_number" class="form-control form-control-sm" placeholder="auto: {{ next_number_hint }}">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label">Customer name</label>
+          <input name="customer_name" class="form-control form-control-sm">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label">Customer phone</label>
+          <input name="customer_phone" class="form-control form-control-sm" inputmode="tel">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label">Payment method</label>
+          <select name="payment_method" class="form-select form-select-sm">
+            {% for m in payment_methods %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+      <span>Items</span>
+      <div>
+        <button type="button" class="btn btn-outline-success btn-sm" id="newProductBtn">
+          <i class="bi bi-plus-circle me-1"></i>New product
+        </button>
+        <button type="button" class="btn btn-success btn-sm" id="addLineBtn">
+          <i class="bi bi-plus-lg me-1"></i>Add item
+        </button>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0" id="linesTable">
+        <thead class="table-light">
+          <tr>
+            <th style="min-width: 260px;">Product</th>
+            <th style="width: 100px;">Qty</th>
+            <th style="width: 150px;">Price ({{ currency }})</th>
+            <th style="width: 140px;" class="text-end">Total</th>
+            <th style="width: 40px;"></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-6 order-md-2">
+      <div class="card shadow-sm">
+        <div class="card-body py-3">
+          <div class="d-flex justify-content-between mb-2">
+            <span>Subtotal</span><strong id="subtotal">0.00</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label for="discount" class="me-2 mb-0">Discount ({{ currency }})</label>
+            <input name="discount" id="discount" type="number" min="0" step="0.01" value=""
+                   class="form-control form-control-sm text-end" style="max-width: 140px;" placeholder="0.00">
+          </div>
+          <div class="mb-2">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="apply_tax" value="1" id="applyTax">
+              <label class="form-check-label" for="applyTax">Apply tax</label>
+            </div>
+            <div class="d-flex justify-content-end align-items-center gap-2 mt-1" id="taxRow" hidden>
+              <select name="tax_mode" id="taxMode" class="form-select form-select-sm" style="max-width: 110px;">
+                <option value="percent">%</option>
+                <option value="amount">{{ currency }} amount</option>
+              </select>
+              <input name="tax_value" id="taxValue" type="number" min="0" step="0.01"
+                     class="form-control form-control-sm text-end" style="max-width: 140px;" placeholder="0">
+              <span class="text-muted small">= <span id="taxAmount">0.00</span></span>
+            </div>
+          </div>
+          <hr class="my-2">
+          <div class="d-flex justify-content-between fs-5">
+            <span>Total</span><strong id="grandTotal">0.00</strong>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-success btn-lg w-100 mt-3" id="saveBtn">
+        <i class="bi bi-check-lg me-1"></i>Save bill
+      </button>
+    </div>
+  </div>
+</form>
+
+{% include "_product_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+let PRODUCTS = {{ products | tojson }};
+const tbody = document.querySelector('#linesTable tbody');
+
+function productOptions(selected) {
+  return '<option value="">— pick product —</option>' + PRODUCTS.map(p =>
+    `<option value="${p.id}" data-price="${p.price}" data-onhand="${p.on_hand}" ${String(p.id) === String(selected) ? 'selected' : ''}>${p.label} · stock: ${p.on_hand}</option>`
+  ).join('');
+}
+
+function addLine(productId) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><select name="product_id[]" class="form-select form-select-sm">${productOptions(productId)}</select>
+        <div class="small text-danger stock-warning" hidden></div></td>
+    <td><input name="quantity[]" type="number" min="1" step="1" value="1" class="form-control form-control-sm"></td>
+    <td><input name="unit_price[]" type="number" min="0" step="0.01" class="form-control form-control-sm"></td>
+    <td class="text-end line-total">0.00</td>
+    <td><button type="button" class="btn btn-link text-danger p-0 remove-line"><i class="bi bi-trash"></i></button></td>`;
+  tbody.appendChild(tr);
+  const sel = tr.querySelector('select');
+  sel.addEventListener('change', () => {
+    const opt = sel.selectedOptions[0];
+    if (opt && opt.value) tr.querySelector('[name="unit_price[]"]').value = opt.dataset.price;
+    recalc();
+  });
+  tr.querySelectorAll('input').forEach(i => i.addEventListener('input', recalc));
+  tr.querySelector('.remove-line').addEventListener('click', () => { tr.remove(); recalc(); });
+  if (productId) sel.dispatchEvent(new Event('change'));
+  recalc();
+  return tr;
+}
+
+function shortages() {
+  // total requested per product vs stock on hand
+  const wanted = {};
+  tbody.querySelectorAll('tr').forEach(tr => {
+    const sel = tr.querySelector('select');
+    if (!sel.value) return;
+    wanted[sel.value] = (wanted[sel.value] || 0) + (parseInt(tr.querySelector('[name="quantity[]"]').value) || 0);
+  });
+  const out = [];
+  for (const [id, qty] of Object.entries(wanted)) {
+    const p = PRODUCTS.find(x => String(x.id) === id);
+    if (p && qty > p.on_hand) out.push(`${p.label}: billing ${qty}, only ${p.on_hand} in stock`);
+  }
+  return out;
+}
+
+function recalc() {
+  let subtotal = 0;
+  tbody.querySelectorAll('tr').forEach(tr => {
+    const sel = tr.querySelector('select');
+    const qty = parseInt(tr.querySelector('[name="quantity[]"]').value) || 0;
+    const price = parseFloat(tr.querySelector('[name="unit_price[]"]').value) || 0;
+    const lt = qty * price;
+    tr.querySelector('.line-total').textContent = lt.toFixed(2);
+    subtotal += lt;
+    // per-row stock warning
+    const warn = tr.querySelector('.stock-warning');
+    const opt = sel.selectedOptions[0];
+    if (opt && opt.value && qty > parseInt(opt.dataset.onhand)) {
+      warn.textContent = `Only ${opt.dataset.onhand} in stock — will go negative`;
+      warn.hidden = false;
+    } else warn.hidden = true;
+  });
+  const discount = parseFloat(document.getElementById('discount').value) || 0;
+  let tax = 0;
+  if (document.getElementById('applyTax').checked) {
+    const v = parseFloat(document.getElementById('taxValue').value) || 0;
+    tax = document.getElementById('taxMode').value === 'percent' ? (subtotal - discount) * v / 100 : v;
+  }
+  document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+  document.getElementById('taxAmount').textContent = tax.toFixed(2);
+  document.getElementById('grandTotal').textContent = Math.max(0, subtotal - discount + tax).toFixed(2);
+}
+
+document.getElementById('addLineBtn').addEventListener('click', () => addLine());
+document.getElementById('newProductBtn').addEventListener('click', () => {
+  ProductModal.open(p => { PRODUCTS.push(p); addLine(p.id); });
+});
+document.getElementById('applyTax').addEventListener('change', e => {
+  document.getElementById('taxRow').hidden = !e.target.checked;
+  recalc();
+});
+['discount', 'taxValue'].forEach(id => document.getElementById(id).addEventListener('input', recalc));
+document.getElementById('taxMode').addEventListener('change', recalc);
+
+document.getElementById('billForm').addEventListener('submit', (e) => {
+  const rows = [...tbody.querySelectorAll('tr')].filter(tr => tr.querySelector('select').value);
+  if (rows.length === 0) {
+    e.preventDefault();
+    alert('Add at least one item.');
+    return;
+  }
+  const short = shortages();
+  if (short.length && !confirm('Stock warning — sale will be recorded anyway:\n\n' + short.join('\n') + '\n\nContinue?')) {
+    e.preventDefault();
+  }
+});
+
+addLine();
+</script>
+{% endblock %}
