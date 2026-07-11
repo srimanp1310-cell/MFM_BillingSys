@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git --version)",
+      "Bash(git init *)",
+      "Bash(python -m venv .venv)",
+      "Bash(.venv/Scripts/python -m pip install -q -r requirements.txt)",
+      "Bash(export FLASK_APP=wsgi.py)",
+      "Bash(.venv/Scripts/python -m flask db init)",
+      "Bash(.venv/Scripts/python -c ' *)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m 'Phase 1: scaffold Flask app factory, config, extensions, base template, migrations *)"
+    ]
+  }
+}

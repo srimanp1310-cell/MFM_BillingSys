@@ -1,0 +1,19 @@
+/* App-wide styles. Keep light; Bootstrap does the heavy lifting. */
+:root {
+  --brand: #1a5c3a;
+}
+
+.navbar-brand {
+  font-weight: 600;
+}
+
+/* Bottom tab bar on small screens gets breathing room */
+main {
+  padding-bottom: 4.5rem;
+}
+
+@media (min-width: 768px) {
+  main {
+    padding-bottom: 1rem;
+  }
+}
