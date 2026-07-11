@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline · MFM Billing</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f8f9fa; display: flex;
+           align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .box { text-align: center; color: #444; padding: 2rem; }
+    .box h1 { color: #1a5c3a; }
+    button { background: #1a5c3a; color: #fff; border: 0; padding: .6rem 1.4rem;
+             border-radius: .5rem; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>You're offline</h1>
+    <p>Billing and stock need a connection to the shop server.<br>
+       Check your internet and try again.</p>
+    <button onclick="location.reload()">Retry</button>
+  </div>
+</body>
+</html>

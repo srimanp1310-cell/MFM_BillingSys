@@ -99,3 +99,23 @@ def register_cli(app):
         db.session.add(user)
         db.session.commit()
         click.echo(f"Admin user '{username}' created.")
+
+    @app.cli.command("gen-vapid")
+    def gen_vapid():
+        """Generate VAPID keys for Web Push; paste the output into .env."""
+        import base64
+
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import ec
+
+        key = ec.generate_private_key(ec.SECP256R1())
+        private = base64.urlsafe_b64encode(
+            key.private_numbers().private_value.to_bytes(32, "big")
+        ).rstrip(b"=").decode()
+        public = base64.urlsafe_b64encode(
+            key.public_key().public_bytes(
+                serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint
+            )
+        ).rstrip(b"=").decode()
+        click.echo(f"VAPID_PUBLIC_KEY={public}")
+        click.echo(f"VAPID_PRIVATE_KEY={private}")

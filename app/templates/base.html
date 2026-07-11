@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#1a5c3a">
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="vapid-key" content="{{ config.VAPID_PUBLIC_KEY }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
   <title>{% block title %}MFM{% endblock %} · MFM Billing</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -36,6 +39,11 @@
             </ul>
           </li>
           {% endif %}
+          <li class="nav-item">
+            <button class="nav-link border-0 bg-transparent" id="pushBell" hidden title="Enable low-stock notifications">
+              <i class="bi bi-bell"></i><span class="d-md-none ms-1">Notifications</span>
+            </button>
+          </li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}" title="Sign out ({{ current_user.username }})"><i class="bi bi-box-arrow-right me-1"></i><span class="d-md-none">Sign out</span></a></li>
         </ul>
       </div>
