@@ -58,6 +58,7 @@ def create_product(
     cost_price=None,
     reorder_level=None,
     description=None,
+    hsn_code=None,
 ):
     code = (code or "").strip() or generate_product_code(category)
     if Product.query.filter(db.func.lower(Product.code) == code.lower()).first():
@@ -68,6 +69,7 @@ def create_product(
         category_id=category.id,
         brand_id=brand.id if brand else None,
         size=(size or "").strip() or None,
+        hsn_code=(hsn_code or "").strip() or None,
         unit=unit or "piece",
         unit_price=unit_price,
         cost_price=cost_price,

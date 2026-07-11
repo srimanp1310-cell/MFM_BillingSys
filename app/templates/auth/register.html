@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-4">
+  <div class="col-12 col-sm-8 col-md-5 col-lg-4">
+    <div class="text-center mb-4">
+      <i class="bi bi-person-plus fs-1" style="color: var(--brand);"></i>
+      <h1 class="h4 mt-2">New staff registration</h1>
+      <p class="text-muted small">An admin must approve your account before you can sign in.</p>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form method="post" novalidate>
+          {{ form.hidden_tag() }}
+          {% for f in [form.username, form.password, form.confirm] %}
+          <div class="mb-3">
+            {{ f.label(class="form-label") }}
+            {{ f(class="form-control", autocapitalize="none") }}
+            {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          {% endfor %}
+          {{ form.submit(class="btn btn-success w-100") }}
+        </form>
+      </div>
+    </div>
+    <p class="text-center mt-3 small">
+      Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

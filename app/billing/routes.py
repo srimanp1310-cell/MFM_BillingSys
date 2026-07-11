@@ -88,9 +88,11 @@ def save():
         discount = _parse_decimal(request.form.get("discount"), "discount")
 
         tax_amount = Decimal("0")
+        tax_rate = None
         if request.form.get("apply_tax") == "1":
             tax_value = _parse_decimal(request.form.get("tax_value"), "tax")
             if request.form.get("tax_mode") == "percent":
+                tax_rate = tax_value
                 tax_amount = ((subtotal - discount) * tax_value / 100).quantize(
                     TWO_PLACES, rounding=ROUND_HALF_UP
                 )
@@ -107,6 +109,7 @@ def save():
                 "customer_name": (request.form.get("customer_name") or "").strip(),
                 "customer_phone": (request.form.get("customer_phone") or "").strip(),
                 "discount": discount,
+                "tax_rate": tax_rate,
                 "tax_amount": tax_amount,
                 "payment_method": payment_method,
             },
@@ -127,5 +130,12 @@ def save():
 @bp.route("/bill/<int:bill_id>")
 @login_required
 def view(bill_id):
+    import os
+
+    from flask import current_app
+
     bill = db.get_or_404(Bill, bill_id)
-    return render_template("billing/bill.html", bill=bill, shop=AppSetting.all_settings())
+    has_logo = os.path.exists(os.path.join(current_app.static_folder, "logo.png"))
+    return render_template(
+        "billing/bill.html", bill=bill, shop=AppSetting.all_settings(), has_logo=has_logo
+    )

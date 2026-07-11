@@ -18,6 +18,7 @@ class SettingsForm(FlaskForm):
     shop_address = TextAreaField("Address", validators=[Optional()])
     shop_phone = StringField("Phone", validators=[Optional(), Length(max=32)])
     shop_gstin = StringField("GSTIN", validators=[Optional(), Length(max=32)])
+    shop_prop = StringField("Proprietor name", validators=[Optional(), Length(max=128)])
     currency_symbol = StringField("Currency symbol", validators=[DataRequired(), Length(max=8)])
     invoice_footer = StringField("Invoice footer line", validators=[Optional(), Length(max=255)])
     submit = SubmitField("Save settings")
@@ -45,6 +46,8 @@ class ProductForm(FlaskForm):
     brand_id = SelectField("Brand", coerce=int)
     new_brand_name = StringField("New brand name", validators=[Optional(), Length(max=64)])
     size = StringField("Size", validators=[Optional(), Length(max=64)])
+    hsn_code = StringField("HSN code", validators=[Optional(), Length(max=16)],
+                           description="GST HSN code printed on invoices (e.g. 9401 for seats, 9404 for mattresses).")
     unit = SelectField("Unit", choices=[("piece", "piece"), ("set", "set")], default="piece")
     unit_price = DecimalField("Selling price", places=2, validators=[DataRequired(), NumberRange(min=0)])
     cost_price = DecimalField("Cost price", places=2, validators=[Optional(), NumberRange(min=0)])

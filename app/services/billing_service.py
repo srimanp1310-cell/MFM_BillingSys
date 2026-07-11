@@ -62,6 +62,7 @@ def create_bill(header, lines, user_id):
                 customer_name=header.get("customer_name") or None,
                 customer_phone=header.get("customer_phone") or None,
                 discount=header.get("discount") or Decimal("0"),
+                tax_rate=header.get("tax_rate"),
                 tax_amount=header.get("tax_amount") or Decimal("0"),
                 payment_method=header.get("payment_method") or "cash",
                 status=BILL_COMPLETED,
@@ -85,6 +86,7 @@ def create_bill(header, lines, user_id):
                         bill_id=bill.id,
                         product_id=product.id,
                         product_name=product.display_name,  # snapshot
+                        hsn_code=product.hsn_code,  # snapshot
                         unit_price=unit_price,  # snapshot
                         quantity=qty,
                         line_total=line_total,

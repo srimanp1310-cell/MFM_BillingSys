@@ -20,11 +20,18 @@
           <td>{{ u.username }}</td>
           <td><span class="badge bg-{{ 'dark' if u.is_admin else 'secondary' }}">{{ u.role }}</span></td>
           <td>
-            {% if u.is_active %}<span class="badge bg-success">active</span>
+            {% if not u.is_approved %}<span class="badge bg-warning text-dark">pending approval</span>
+            {% elif u.is_active %}<span class="badge bg-success">active</span>
             {% else %}<span class="badge bg-danger">inactive</span>{% endif %}
           </td>
           <td class="text-muted small">{{ u.created_at | localdate }}</td>
           <td class="text-end">
+            {% if not u.is_approved %}
+            <form method="post" action="{{ url_for('auth.approve_user', user_id=u.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-success btn-sm">Approve</button>
+            </form>
+            {% endif %}
             <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#resetModal{{ u.id }}">Reset password</button>
             {% if u.id != current_user.id %}
             <form method="post" action="{{ url_for('auth.toggle_user', user_id=u.id) }}" class="d-inline">

@@ -160,6 +160,7 @@ def new_product():
                 cost_price=form.cost_price.data,
                 reorder_level=form.reorder_level.data,
                 description=form.description.data,
+                hsn_code=form.hsn_code.data,
             )
             db.session.commit()
             flash(f"Product '{product.display_name}' created (code {product.code}).", "success")
@@ -192,6 +193,7 @@ def edit_product(product_id):
             product.size = (form.size.data or "").strip() or None
             if not category.track_size:
                 product.size = None
+            product.hsn_code = (form.hsn_code.data or "").strip() or None
             product.unit = form.unit.data
             product.unit_price = form.unit_price.data
             product.cost_price = form.cost_price.data

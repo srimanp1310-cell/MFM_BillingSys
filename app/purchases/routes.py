@@ -150,6 +150,7 @@ def api_create_product():
             unit=data.get("unit") or "piece",
             unit_price=unit_price,
             reorder_level=int(reorder_level) if reorder_level else None,
+            hsn_code=data.get("hsn_code"),
         )
         db.session.commit()
         return jsonify(

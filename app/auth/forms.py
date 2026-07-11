@@ -1,8 +1,25 @@
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, SelectField, StringField, SubmitField
-from wtforms.validators import DataRequired, Length, Optional
+from wtforms.validators import DataRequired, EqualTo, Length, Optional, Regexp
 
 from app.models import ROLE_ADMIN, ROLE_STAFF
+
+
+class RegisterForm(FlaskForm):
+    username = StringField(
+        "Username",
+        validators=[
+            DataRequired(),
+            Length(min=3, max=64),
+            Regexp(r"^[a-zA-Z0-9_.-]+$", message="Letters, numbers, dots, dashes and underscores only."),
+        ],
+    )
+    password = PasswordField("Password", validators=[DataRequired(), Length(min=6, max=128)])
+    confirm = PasswordField(
+        "Confirm password",
+        validators=[DataRequired(), EqualTo("password", message="Passwords must match.")],
+    )
+    submit = SubmitField("Register")
 
 
 class LoginForm(FlaskForm):

@@ -51,6 +51,10 @@
             <label class="form-label">Unit</label>
             <select class="form-select" id="pmUnit"><option>piece</option><option>set</option></select>
           </div>
+          <div class="col-6 mb-2">
+            <label class="form-label">HSN code</label>
+            <input class="form-control" id="pmHsn" placeholder="e.g. 9401">
+          </div>
         </div>
         <div class="form-text">Code/SKU is auto-generated.</div>
       </div>
@@ -117,6 +121,7 @@ const ProductModal = (() => {
       unit: el('pmUnit').value,
       unit_price: el('pmPrice').value,
       reorder_level: el('pmReorder').value,
+      hsn_code: el('pmHsn').value,
     };
     const resp = await fetch('{{ url_for("purchases.api_create_product") }}', {
       method: 'POST',
@@ -145,7 +150,7 @@ const ProductModal = (() => {
     open(cb) {
       onCreate = cb;
       el('pmError').classList.add('d-none');
-      ['pmName', 'pmNewCategory', 'pmNewBrand', 'pmSize', 'pmPrice', 'pmReorder'].forEach(i => el(i).value = '');
+      ['pmName', 'pmNewCategory', 'pmNewBrand', 'pmSize', 'pmPrice', 'pmReorder', 'pmHsn'].forEach(i => el(i).value = '');
       el('pmNewCategorySize').checked = false;
       fillSelects();
       modal.show();

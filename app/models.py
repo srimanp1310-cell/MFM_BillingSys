@@ -43,6 +43,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(16), nullable=False, default=ROLE_STAFF)
     is_active_flag = db.Column("is_active", db.Boolean, nullable=False, default=True)
+    # self-registered accounts wait for an admin to approve them
+    is_approved = db.Column(db.Boolean, nullable=False, default=True, server_default=db.text("1"))
     created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     def set_password(self, password):
@@ -95,6 +97,7 @@ class Product(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=False)
     brand_id = db.Column(db.Integer, db.ForeignKey("brands.id"))
     size = db.Column(db.String(64))  # only meaningful when category.track_size
+    hsn_code = db.Column(db.String(16))  # GST HSN code shown on invoices
     description = db.Column(db.Text)
     unit = db.Column(db.String(16), nullable=False, default="piece")
     unit_price = db.Column(db.Numeric(12, 2), nullable=False, default=0)
@@ -157,6 +160,7 @@ class Bill(db.Model):
     bill_date = db.Column(db.DateTime, nullable=False, default=utcnow)
     subtotal = db.Column(db.Numeric(12, 2), nullable=False, default=0)
     discount = db.Column(db.Numeric(12, 2), nullable=False, default=0)
+    tax_rate = db.Column(db.Numeric(5, 2))  # GST %, set when tax was percent-based
     tax_amount = db.Column(db.Numeric(12, 2), nullable=False, default=0)
     total = db.Column(db.Numeric(12, 2), nullable=False, default=0)
     payment_method = db.Column(db.String(16), nullable=False, default="cash")
@@ -175,6 +179,7 @@ class BillLineItem(db.Model):
     bill_id = db.Column(db.Integer, db.ForeignKey("bills.id"), nullable=False, index=True)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False, index=True)
     product_name = db.Column(db.String(255), nullable=False)  # snapshot incl. brand/size
+    hsn_code = db.Column(db.String(16))  # snapshot
     unit_price = db.Column(db.Numeric(12, 2), nullable=False)  # snapshot
     quantity = db.Column(db.Integer, nullable=False)
     line_total = db.Column(db.Numeric(12, 2), nullable=False)
@@ -225,6 +230,7 @@ class AppSetting(db.Model):
         "shop_address": "",
         "shop_phone": "",
         "shop_gstin": "",
+        "shop_prop": "",  # proprietor name, shown as "Prop : ..." on the bill
         "currency_symbol": "₹",
         "invoice_footer": "Thank you for your business!",
     }

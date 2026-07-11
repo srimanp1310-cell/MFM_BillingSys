@@ -3,9 +3,22 @@
 
 {% block head %}
 <style>
-  .invoice { background: #fff; max-width: 210mm; margin: 0 auto; }
+  .invoice {
+    background: #fff;
+    max-width: 210mm;
+    margin: 0 auto;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .inv-serif { font-family: Georgia, 'Times New Roman', serif; }
+  .inv-rule { border-top: 2px solid #000; margin: 2px 0; }
+  .inv-table { width: 100%; border-collapse: collapse; }
+  .inv-table th, .inv-table td { border: 1px solid #000; padding: 6px 8px; }
+  .inv-table th { text-align: center; font-weight: bold; }
+  .inv-filler td { height: 210px; border-top: 0; border-bottom: 0; }
+  .inv-total-label { font-weight: 600; text-align: center; }
   @media print {
-    @page { size: A4; margin: 12mm; }
+    @page { size: A4; margin: 10mm; }
     body { background: #fff !important; }
     main { padding: 0 !important; max-width: none !important; }
     .invoice { box-shadow: none !important; border: 0 !important; max-width: none; }
@@ -43,71 +56,115 @@
        style="font-size: 5rem; transform: translate(-50%,-50%) rotate(-25deg) !important; pointer-events:none;">VOID</div>
   {% endif %}
 
-  <div class="d-flex justify-content-between border-bottom pb-3 mb-3">
+  {# --- header strip: GSTIN / Prop left, Cell right --- #}
+  <div class="d-flex justify-content-between small fw-bold">
     <div>
-      <h2 class="h4 mb-1">{{ shop.shop_name }}</h2>
-      {% if shop.shop_address %}<div class="small text-muted" style="white-space: pre-line;">{{ shop.shop_address }}</div>{% endif %}
-      {% if shop.shop_phone %}<div class="small text-muted">Ph: {{ shop.shop_phone }}</div>{% endif %}
-      {% if shop.shop_gstin %}<div class="small text-muted">GSTIN: {{ shop.shop_gstin }}</div>{% endif %}
+      {% if shop.shop_gstin %}<div>GSTIN : {{ shop.shop_gstin }}</div>{% endif %}
+      {% if shop.shop_prop %}<div>Prop : {{ shop.shop_prop }}</div>{% endif %}
     </div>
-    <div class="text-end">
-      <div class="h5 mb-1">INVOICE</div>
-      <div><strong>{{ bill.bill_number }}</strong></div>
-      <div class="small text-muted">{{ bill.bill_date | localdt }}</div>
+    {% if shop.shop_phone %}<div class="align-self-end">Cell : {{ shop.shop_phone }}</div>{% endif %}
+  </div>
+  <div class="inv-rule"></div>
+
+  {# --- shop name + address --- #}
+  <div class="text-center py-1">
+    <div class="d-flex justify-content-center align-items-center gap-3">
+      {% if has_logo %}<img src="{{ url_for('static', filename='logo.png') }}" alt="" style="height: 58px;">{% endif %}
+      <span class="inv-serif fw-bold text-uppercase" style="font-size: 2.1rem; letter-spacing: 1px;">{{ shop.shop_name }}</span>
     </div>
+    {% if shop.shop_address %}<div class="fw-bold" style="font-size: 1.05rem;">{{ shop.shop_address }}</div>{% endif %}
+  </div>
+  <div class="inv-rule"></div>
+  <div class="inv-rule" style="margin-top: 0;"></div>
+
+  {# --- invoice no / title / date --- #}
+  <div class="d-flex justify-content-between align-items-center py-2">
+    <div class="fw-bold">Invoice no: {{ bill.bill_number }}</div>
+    <div class="inv-serif fw-bold" style="font-size: 1.4rem;">INVOICE</div>
+    <div class="fw-bold">Date : {{ bill.bill_date | localdate }}</div>
   </div>
 
-  <div class="row mb-3 small">
-    <div class="col-6">
-      <span class="text-muted">Billed to:</span>
-      <strong>{{ bill.customer_name or 'Walk-in customer' }}</strong>
-      {% if bill.customer_phone %}<br><span class="text-muted">Ph:</span> {{ bill.customer_phone }}{% endif %}
-    </div>
-    <div class="col-6 text-end">
-      <span class="text-muted">Payment:</span> {{ bill.payment_method }}<br>
-      <span class="text-muted">Served by:</span> {{ bill.creator.username }}
-    </div>
+  {# --- customer --- #}
+  <div class="mb-3" style="min-height: 3rem;">
+    {{ bill.customer_name or 'Walk-in customer' }}{% if bill.customer_name %},{% endif %}
+    {% if bill.customer_phone %}<br>Ph: {{ bill.customer_phone }}{% endif %}
+    <span class="d-print-none text-muted small ms-2">(Payment: {{ bill.payment_method }} · served by {{ bill.creator.username }})</span>
   </div>
 
-  <table class="table table-sm">
+  {# --- items table with totals block --- #}
+  {% set taxable = bill.subtotal - bill.discount %}
+  {% set total_rows = 2 + (2 if bill.discount else 0) + (2 if bill.tax_rate else (1 if bill.tax_amount else 0)) %}
+  <table class="inv-table">
     <thead>
-      <tr class="border-top border-bottom">
-        <th style="width: 40px;">#</th><th>Item</th>
-        <th class="text-end" style="width: 70px;">Qty</th>
-        <th class="text-end" style="width: 120px;">Rate</th>
-        <th class="text-end" style="width: 130px;">Amount</th>
+      <tr>
+        <th style="width: 6%;"></th>
+        <th style="width: 44%;">Product</th>
+        <th style="width: 12%;">HSN Code</th>
+        <th style="width: 10%;">Quantity</th>
+        <th style="width: 13%;">Price</th>
+        <th style="width: 15%;">Amount</th>
       </tr>
     </thead>
     <tbody>
       {% for li in bill.line_items %}
       <tr>
-        <td>{{ loop.index }}</td>
-        <td>{{ li.product_name }}{% if li.returned_qty %} <span class="badge bg-warning text-dark d-print-none">{{ li.returned_qty }} returned</span>{% endif %}</td>
-        <td class="text-end">{{ li.quantity }}</td>
-        <td class="text-end">{{ '%.2f' | format(li.unit_price) }}</td>
-        <td class="text-end">{{ '%.2f' | format(li.line_total) }}</td>
+        <td class="text-center">{{ loop.index }}</td>
+        <td class="text-center">{{ li.product_name }}{% if li.returned_qty %} <span class="badge bg-warning text-dark d-print-none">{{ li.returned_qty }} returned</span>{% endif %}</td>
+        <td class="text-center">{{ li.hsn_code or '' }}</td>
+        <td class="text-center">{{ li.quantity }}</td>
+        <td class="text-end">{{ '{:,.2f}'.format(li.unit_price) }}</td>
+        <td class="text-end">{{ '{:,.2f}'.format(li.line_total) }}</td>
       </tr>
       {% endfor %}
+      <tr class="inv-filler"><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+
+      <tr>
+        <td colspan="2" rowspan="{{ total_rows }}" style="vertical-align: top;">
+          <strong>In Words:</strong> <u>{{ bill.total | in_words }}</u>
+        </td>
+        {% if bill.discount %}
+        <td colspan="3" class="inv-total-label">Subtotal</td>
+        <td class="text-end">{{ '{:,.2f}'.format(bill.subtotal) }}</td>
+      </tr>
+      <tr>
+        <td colspan="3" class="inv-total-label">Discount</td>
+        <td class="text-end">− {{ '{:,.2f}'.format(bill.discount) }}</td>
+      </tr>
+      <tr>
+        {% endif %}
+        <td colspan="3" class="inv-total-label">Total Taxable Value</td>
+        <td class="text-end">{{ '{:,.2f}'.format(taxable) }}</td>
+      </tr>
+      {% if bill.tax_rate %}
+      <tr>
+        <td colspan="3" class="inv-total-label">CGST ({{ '%g' | format(bill.tax_rate / 2) }}%)</td>
+        <td class="text-end">{{ '{:,.2f}'.format(bill.tax_amount / 2) }}</td>
+      </tr>
+      <tr>
+        <td colspan="3" class="inv-total-label">SGST ({{ '%g' | format(bill.tax_rate / 2) }}%)</td>
+        <td class="text-end">{{ '{:,.2f}'.format(bill.tax_amount / 2) }}</td>
+      </tr>
+      {% elif bill.tax_amount %}
+      <tr>
+        <td colspan="3" class="inv-total-label">Tax</td>
+        <td class="text-end">{{ '{:,.2f}'.format(bill.tax_amount) }}</td>
+      </tr>
+      {% endif %}
+      <tr>
+        <td colspan="3" class="inv-total-label">Total</td>
+        <td class="text-end fw-bold">{{ '{:,.2f}'.format(bill.total) }}</td>
+      </tr>
     </tbody>
   </table>
 
-  <div class="row justify-content-end">
-    <div class="col-7 col-md-4">
-      <div class="d-flex justify-content-between small"><span>Subtotal</span><span>{{ currency }}{{ '%.2f' | format(bill.subtotal) }}</span></div>
-      {% if bill.discount %}
-      <div class="d-flex justify-content-between small"><span>Discount</span><span>−{{ currency }}{{ '%.2f' | format(bill.discount) }}</span></div>
-      {% endif %}
-      {% if bill.tax_amount %}
-      <div class="d-flex justify-content-between small"><span>Tax</span><span>{{ currency }}{{ '%.2f' | format(bill.tax_amount) }}</span></div>
-      {% endif %}
-      <div class="d-flex justify-content-between fw-bold border-top mt-1 pt-1">
-        <span>Total</span><span>{{ currency }}{{ '%.2f' | format(bill.total) }}</span>
-      </div>
-    </div>
+  {# --- signature --- #}
+  <div class="text-end mt-4" style="margin-bottom: 3rem;">
+    <div class="fw-bold text-uppercase">{{ shop.shop_name }}</div>
   </div>
+  <div class="text-end fw-bold">Signature</div>
 
   {% if shop.invoice_footer %}
-  <div class="text-center text-muted small border-top mt-4 pt-2">{{ shop.invoice_footer }}</div>
+  <div class="text-center text-muted small mt-3 d-print-none">{{ shop.invoice_footer }}</div>
   {% endif %}
 </div>
 

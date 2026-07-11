@@ -7,7 +7,7 @@
 <form method="post" class="card shadow-sm" style="max-width: 640px;" novalidate>
   <div class="card-body">
     {{ form.hidden_tag() }}
-    {% for f in [form.shop_name, form.shop_address, form.shop_phone, form.shop_gstin, form.currency_symbol, form.invoice_footer] %}
+    {% for f in [form.shop_name, form.shop_address, form.shop_phone, form.shop_gstin, form.shop_prop, form.currency_symbol, form.invoice_footer] %}
     <div class="mb-3">
       {{ f.label(class="form-label") }}
       {{ f(class="form-control", rows=3) }}

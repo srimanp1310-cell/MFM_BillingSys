@@ -40,7 +40,9 @@ def create_app(config_class=Config):
     app.register_blueprint(purchases_bp)
     app.register_blueprint(admin_bp)
 
-    from app.utils import to_local
+    from app.utils import amount_in_words, to_local
+
+    app.add_template_filter(amount_in_words, "in_words")
 
     @app.template_filter("localdt")
     def localdt(dt, fmt="%d-%m-%Y %I:%M %p"):
