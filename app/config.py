@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+_DEV_SECRET = "dev-only-insecure-key"
+
 
 def _database_url():
     """Normalize host-provided URLs (Render/Railway give postgres://) to the
@@ -18,24 +20,39 @@ def _database_url():
     return url or ("sqlite:///" + str(BASE_DIR / "instance" / "app.db"))
 
 
-class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-insecure-key")
-    SQLALCHEMY_DATABASE_URI = _database_url()
+def _is_production():
+    # SECURE_COOKIES=1 marks a production (HTTPS) deployment.
+    return os.environ.get("SECURE_COOKIES") == "1"
 
-    # Set SECURE_COOKIES=1 in production (HTTPS hosts).
-    SESSION_COOKIE_SECURE = os.environ.get("SECURE_COOKIES") == "1"
-    REMEMBER_COOKIE_SECURE = os.environ.get("SECURE_COOKIES") == "1"
-    SESSION_COOKIE_HTTPONLY = True
+
+class Config:
+    SECRET_KEY = os.environ.get("SECRET_KEY") or _DEV_SECRET
+    if _is_production() and SECRET_KEY == _DEV_SECRET:
+        raise RuntimeError(
+            "SECRET_KEY is not set. Generate one with "
+            "`python -c \"import secrets; print(secrets.token_hex(32))\"` "
+            "and set it in the host's environment variables."
+        )
+
+    SQLALCHEMY_DATABASE_URI = _database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Session/cookie security. SECURE flags require HTTPS, so they are driven
+    # by SECURE_COOKIES=1 (set in production; leave unset for http://localhost).
+    SESSION_COOKIE_SECURE = _is_production()
+    REMEMBER_COOKIE_SECURE = _is_production()
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    REMEMBER_COOKIE_DURATION = 60 * 60 * 24 * 30  # 30 days, staff devices
 
     # Display defaults; shop details are editable in Admin > Settings.
     CURRENCY_SYMBOL = os.environ.get("CURRENCY_SYMBOL", "₹")  # ₹
+    TIMEZONE = os.environ.get("TIMEZONE", "Asia/Kolkata")  # bill dates / numbering year
 
+    # Web Push (low-stock notifications); generate with `flask gen-vapid`.
     VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
     VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
     VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "mailto:admin@example.com")
-
-    REMEMBER_COOKIE_DURATION = 60 * 60 * 24 * 30  # 30 days, staff devices
 
 
 class TestConfig(Config):
